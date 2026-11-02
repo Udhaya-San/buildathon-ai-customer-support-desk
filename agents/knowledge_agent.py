@@ -117,7 +117,7 @@ def _keyword_search(query: str, top_k: int = 3):
     return [chunk for score, chunk in scored[:top_k] if score >= 0.5 * best]
 
 # ------------------------------------------------ search by meaning (embeddings + FAISS)
-_vector_cache = {"texts": None, "index": None}
+_vector_cache: dict = {"texts": None, "index": None}
 
 
 def _vector_search(query: str, chunks, top_k: int = 5):

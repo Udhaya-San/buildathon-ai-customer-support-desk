@@ -306,7 +306,7 @@ def render_human_review(row):
     st.caption("This ticket needs a human. Edit the reply if needed, then approve it.")
     edited = st.text_area("Reply to send", value=row["response"], key=f"review_{row['ticket_id']}", height=140)
     if st.button("✅ Approve reply (mark as sent)", key=f"approve_{row['ticket_id']}"):
-        ticket_store.update_ticket(row["ticket_id"], human_review="Approved", human_reply=edited.strip())
+        ticket_store.update_ticket(row["ticket_id"], human_review="Approved", human_reply=(edited or "").strip())
         st.rerun()
 
 

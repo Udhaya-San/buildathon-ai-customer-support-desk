@@ -181,6 +181,9 @@ The reason is written to `escalation_reason` in the log and shown in the UI.
 
 All six tickets got the expected status.
 
+Fast offline tests: run `pytest` (31 tests, about 1 second, no API key needed).
+All test cases are listed in [docs/test_cases.md](docs/test_cases.md).
+
 ## What I learned
 
 - A plain-code rule is safer than asking the AI to "remember" a rule: even if the AI marks a ticket as not urgent, the escalation code still escalates a legal threat.
