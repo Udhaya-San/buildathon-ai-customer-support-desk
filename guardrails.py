@@ -8,6 +8,8 @@
 
 import re
 
+import config
+
 # ---------- 1. personal data ----------
 _EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 _AADHAAR = re.compile(r"\b\d{4}[ -]\d{4}[ -]\d{4}\b")
@@ -69,3 +71,28 @@ def unsupported_numbers(reply: str, *allowed_sources: str):
     for source in allowed_sources:
         allowed |= _numbers(source or "")
     return sorted(_numbers(reply) - allowed, key=lambda n: (len(n), n))
+
+# ---------- 4. contact details in the reply ----------
+_URL = re.compile(r"(?:https?://|www\.)[^\s)>\],]+", re.IGNORECASE)
+
+
+def _host(url: str) -> str:
+    return re.sub(r"^(?:https?://)?(?:www\.)?", "", url.lower()).split("/")[0]
+
+
+def unofficial_contacts(reply: str, *allowed_sources: str):
+    """E-mails, web links and phone numbers in the reply that are neither official nor in the documents."""
+    allowed_text = " ".join(allowed_sources).lower()
+    found = []
+    for email in _EMAIL.findall(reply or ""):
+        if email.lower() not in config.OFFICIAL_EMAILS and email.lower() not in allowed_text:
+            found.append(email)
+    for url in _URL.findall(reply or ""):
+        host = _host(url)
+        if not any(host == d or host.endswith("." + d) for d in config.OFFICIAL_DOMAINS) and host not in allowed_text:
+            found.append(url)
+    for phone in _PHONE.findall(reply or ""):
+        digits = re.sub(r"\D", "", phone)
+        if digits not in re.sub(r"\D", "", allowed_text):
+            found.append(phone)
+    return list(dict.fromkeys(found))

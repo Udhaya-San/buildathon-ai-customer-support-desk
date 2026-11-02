@@ -24,6 +24,9 @@ Rules that do not need the AI are covered by `pytest` (see the bottom of this pa
 | 9 | "My package never showed up and the tracking page is blank." (different words from the documents) | Search by meaning (embeddings) | Finds `shipping_policy.md` even without matching words |
 | 10 | The same complaint submitted twice in a row | Duplicate-submit check | The second submit is refused with "already submitted", and no new ticket is created |
 | 11 | "help" | Validation | Refused: "please describe the problem in a little more detail" |
+| 12 | "I want to speak to a manager about my late order." | Escalation rule: asks for a human | **Escalated**, reason "Customer asked for a human" |
+| 13 | "I paid Rs 15000 on a website I found on Instagram and got nothing." | Escalation rules: high value, unofficial channel | **Escalated** |
+| 14 | "Do you sell gift cards for a company of 500 employees with custom branding?" | Escalation rule: bulk enquiry | **Escalated**, reason "Bulk or business enquiry" |
 
 ## Automated tests (`pytest`)
 
@@ -33,5 +36,7 @@ Run `pytest -v`. These need no AI, no internet and no API key, and run in about 
 |---|---|---|
 | `tests/test_guardrails.py` | 13 | Masking, injection detection, invented-number check |
 | `tests/test_escalation.py` | 13 | Every escalation rule, and rules that must NOT fire |
-| `tests/test_search.py` | 5 | The knowledge-base search finds the right file, and finds nothing for unrelated questions |
-| **Total** | **31** | |
+| `tests/test_search.py` | 8 The knowledge-base search finds the right file, and finds nothing for unrelated questions |
+| `tests/test_new_rules.py` | 10 | Bulk, unofficial channel, high value, asks for a human, and cases that must NOT fire |
+| `tests/test_output_guardrail.py` | 7 | Unofficial emails, links and phone numbers in a reply |
+| **Total** | **51** |

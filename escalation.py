@@ -22,6 +22,31 @@ _LEGAL_FRAUD_PAYMENT = re.compile(
     re.IGNORECASE,
 )
 
+_BULK = re.compile(
+    r"\b(?:\d{2,}\s+(?:employees|staff|people|members)|bulk|wholesale|distributor|reseller|corporate|"
+    r"company of|for my (?:company|business|office|shop)|custom[- ]branded|custom branding)\b",
+    re.IGNORECASE,
+)
+_UNOFFICIAL_CHANNEL = re.compile(
+    r"\b(?:instagram|whatsapp|facebook|telegram|another website|other website|fake (?:website|site)|"
+    r"unofficial (?:website|site)|paid to (?:a )?(?:personal|private) (?:account|number|upi))\b",
+    re.IGNORECASE,
+)
+_ASKS_HUMAN = re.compile(
+    r"\b(?:speak|talk|connect me|transfer me)\s+(?:to|with)\s+(?:a |an |the )?(?:human|person|manager|supervisor|agent|executive|senior)\b",
+    re.IGNORECASE,
+)
+_AMOUNT = re.compile(r"(?:rs\.?|inr|\u20b9)\s*([\d,]+)", re.IGNORECASE)
+HIGH_VALUE = 10000   # rupees
+
+
+def _high_value(text: str) -> bool:
+    for raw in _AMOUNT.findall(text or ""):
+        digits = raw.replace(",", "")
+        if digits.isdigit() and int(digits) >= HIGH_VALUE:
+            return True
+    return False
+
 _ANGRY = {"angry", "very angry", "furious", "outraged", "enraged"}
 
 
@@ -63,6 +88,7 @@ def decide(
     complaint: str,
     ungrounded=(),
     injection: bool = False,
+    unofficial=(),
     agent_escalate: bool = False,
     agent_reason: str = "",
 ):
@@ -83,9 +109,18 @@ def decide(
         reasons.append("Reply uses details not found in the documents (" + ", ".join(ungrounded) + ")")
     if injection:
         reasons.append("Possible prompt-injection text in the complaint")
+    if unofficial:
+        reasons.append("Reply contains contact details that are not official (" + ", ".join(unofficial) + ")")
+    if _BULK.search(complaint or ""):
+        reasons.append("Bulk or business enquiry")
+    if _UNOFFICIAL_CHANNEL.search(complaint or ""):
+        reasons.append("Payment or order through an unofficial website or channel")
+    if _high_value(complaint):
+        reasons.append("High-value amount mentioned (Rs 10,000 or more)")
+    if _ASKS_HUMAN.search(complaint or ""):
+        reasons.append("Customer asked for a human")
     if agent_escalate and not reasons:
         reasons.append((agent_reason or "Log Agent judged the case complicated").strip())
-
     if reasons:
         return "Escalated", " + ".join(reasons)
     return "Resolved", ""

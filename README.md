@@ -78,6 +78,34 @@ AI output can slip, so everything that must be right is ordinary Python:
 
 ![Own test 2](screenshots/09-test-injection.png)
 
+## Assignment checklist
+
+| Requirement | Status | Where |
+|---|---|---|
+| 4 AutoGen agents, one job each | ✅ | `agents/` |
+| Round Robin team with a stop condition | ✅ | `team.py` |
+| Knowledge base search with a source file name | ✅ | `agents/knowledge_agent.py`, `knowledge_base/` |
+| Reply written only from retrieved documents | ✅ | `agents/resolution_agent.py`, number check in `guardrails.py` |
+| Ticket logged to CSV | ✅ | `ticket_store.py`, `logs/tickets.csv` |
+| Resolved or Escalated decision with a reason | ✅ | `escalation.py` (plain code) |
+| Streamlit UI | ✅ | `app.py` |
+| 6 test complaints with expected results | ✅ | `examples.py`, `evaluate.py` |
+| 2 own test cases | ✅ | `docs/test_cases.md` (cases 7 to 11), screenshots 08 and 09 |
+| Screenshots in the README | ✅ | `screenshots/` |
+
+## Bonus challenges
+
+| Bonus | Status | Notes |
+|---|---|---|
+| Embeddings and a vector store | ✅ | Hybrid search: keyword scoring plus OpenAI embeddings in a FAISS index, merged with rank fusion. If embeddings are unavailable, it falls back to keyword search |
+| `SelectorGroupChat` | ➖ | Not used. The fixed order Query, Knowledge, Resolution, Log is enforced with `RoundRobinGroupChat`, which is predictable and easy to audit |
+| Human-in-the-loop | ✅ | Escalated tickets show an editable reply and an Approve button. The approval is saved in the log. Built into the UI instead of `UserProxyAgent` |
+| Dashboard | ✅ | KPI cards, charts and the ticket log in `app.py` |
+| Duplicate-submit protection | ✅ | The same complaint cannot be submitted twice in a row |
+| Automated tests | ✅ | 51 `pytest` tests that need no API key |
+| Output guardrail and extra escalation rules | ✅ | Unofficial contact details in a reply, bulk enquiries, unofficial payment channels, high-value amounts, requests for a human |
+| Deployment | ⏳ | Planned: Docker on a VPS |
+
 ## Project structure
 
 ```
@@ -93,9 +121,14 @@ buildathon-ai-customer-support-desk/
 ├── guardrails.py           # input and output guardrails (plain code)
 ├── ticket_store.py         # reads and writes logs/tickets.csv
 ├── state.py                # facts about the ticket that is running
+├── embeddings.py           # turns text into vectors (OpenAI embeddings, cached)
+├── vector_index.py         # FAISS index: finds passages closest in meaning
 ├── examples.py             # the 6 test complaints from the assignment
 ├── evaluate.py             # runs the 6 complaints with the real AI
-├── knowledge_base/         # 5 short company documents (.md)
+├── tests/                  # 34 fast pytest tests (no API key needed)
+├── docs/                   # architecture diagram and test_cases.md
+├── pytest.ini
+├── knowledge_base/         # 10 short company documents (.md)
 ├── logs/tickets.csv        # created automatically
 ├── screenshots/            # UI screenshots used in this README
 ├── .streamlit/config.toml  # colours and theme
@@ -144,14 +177,41 @@ python evaluate.py
 
 ## The knowledge base
 
-Five short documents for ShopNest in `knowledge_base/`: shipping policy, refund policy, account and login,
-product FAQ, payments and billing. They contain real-looking details (delivery times, a 14 day return window,
-password reset steps) so every answer can be checked against the file.
+## The knowledge base
 
-`search_kb(query)` splits each document into sections, ignores filler words, matches synonyms
-(late = delayed, charged = billed, etc.) and returns the best passages with a
-`[Source: file | Section: ...]` label, or `NO_MATCH`. A passage needs at least two real keyword matches,
-so an unrelated question finds nothing instead of a wrong answer.
+Ten short documents for ShopNest in `knowledge_base/`:
+
+| Document | Covers |
+|---|---|
+| `shipping_policy.md` | delivery times, charges, tracking, delayed and lost parcels |
+| `refund_policy.md` | return window, refund timelines, exchanges |
+| `account_and_login.md` | sign-in, password reset, account changes |
+| `product_faq.md` | warranty, defective items, sizes, availability |
+| `payments_and_billing.md` | payment methods, COD, double charges, coupons |
+| `offers_and_rewards.md` | coupons, wallet cashback, first-order offer, sale prices |
+| `order_management.md` | cancelling and changing orders, undelivered and missing items |
+| `support_and_contact.md` | support hours, response times, feedback |
+| `security_and_scams.md` | official channels, OTP safety, fraudulent charges |
+| `app_and_website_help.md` | app crashes, checkout not loading, notifications, address settings |
+
+They contain real-looking details (delivery times, a 14 day return window, password reset steps)
+so every answer can be checked against the file.
+
+They contain real-looking details (delivery times, a 14 day return window, password reset steps)
+so every answer can be checked against the file.
+
+## Hybrid search
+
+`search_kb` combines two ways of finding the right passage:
+
+| Method | Good at | Example |
+|---|---|---|
+| Keyword scoring (stemming, synonyms, IDF) | exact words | "refund", "password" |
+| Embeddings and FAISS (`embeddings.py`, `vector_index.py`) | same meaning, different words | "my parcel never showed up" finds the delayed-orders passage |
+
+The two result lists are merged with Reciprocal Rank Fusion. Passages whose meaning-similarity is
+below `VECTOR_MIN_SCORE` (in `config.py`) are ignored, so an unrelated question still gives NO_MATCH.
+Vectors are cached in `.cache/`, so documents are embedded only when they change.
 
 ## Escalation rule
 
@@ -164,6 +224,11 @@ A ticket is **Escalated** to a human when any of these is true:
 5. the Resolution Agent's confidence is Low
 6. the reply uses numbers (days, prices) that are not in the retrieved documents (guardrail)
 7. the complaint looks like a prompt-injection attempt (guardrail)
+8. the reply contains an email, web link or phone number that is not official (guardrail)
+9. the complaint is a bulk or business enquiry (for example "500 employees")
+10. the customer paid or ordered through an unofficial website or channel (Instagram, WhatsApp and so on)
+11. the complaint mentions an amount of Rs 10,000 or more
+12. the customer asks to speak to a human, a manager or a supervisor
 
 The reason is written to `escalation_reason` in the log and shown in the UI.
 
@@ -172,6 +237,7 @@ The reason is written to `escalation_reason` in the log and shown in the UI.
 - **Personal data is masked** (email, phone, card and ID numbers) before the AI sees the complaint and before it is logged.
 - **Hidden instructions are ignored.** Text such as "ignore all previous instructions" is detected, the agents are warned, and the ticket is escalated.
 - **No invented policies.** Numbers in the reply must appear in the retrieved passages or the complaint, or the ticket is escalated.
+- **No unofficial contact details.** If the reply contains an email, web link or phone number that is not ShopNest's (or not in the retrieved documents), the ticket is escalated. This stops a made-up support address from reaching a customer.
 - **Human review.** For an Escalated ticket the UI shows an editable reply and an **Approve reply (mark as sent)** button.
   The approval and the final text are saved in the log (`human_review`, `human_reply`). Nothing is actually emailed; the
   approve step is where a real email or WhatsApp call would go.
@@ -195,7 +261,7 @@ The reason is written to `escalation_reason` in the log and shown in the UI.
 
 All six tickets got the expected status.
 
-Fast offline tests: run `pytest` (31 tests, about 1 second, no API key needed).
+Fast offline tests: run `pytest` (51tests, about 1 second, no API key needed).
 All test cases are listed in [docs/test_cases.md](docs/test_cases.md).
 
 ## What I learned

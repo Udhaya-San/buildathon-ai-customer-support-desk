@@ -9,6 +9,9 @@ BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
 COMPANY_NAME = "ShopNest"
+# The only contact details a reply may contain unless they appear in the retrieved documents.
+OFFICIAL_EMAILS = {"support@shopnest.example"}
+OFFICIAL_DOMAINS = {"shopnest.example"}
 KB_DIR = BASE_DIR / "knowledge_base"
 LOG_DIR = BASE_DIR / "logs"
 LOG_PATH = LOG_DIR / "tickets.csv"

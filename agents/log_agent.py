@@ -1,6 +1,7 @@
 """Agent 4 - Log Agent: records the ticket with the log_ticket tool and decides on escalation."""
 
 from autogen_agentchat.agents import AssistantAgent
+from guardrails import unofficial_contacts, unsupported_numbers
 
 import config
 import ticket_store
@@ -33,6 +34,7 @@ def log_ticket(
     """
     # Facts that must be exact come from plain code (state), not from what the AI typed.
     ungrounded = unsupported_numbers(response, STATE.passages, STATE.complaint)
+    unofficial = unofficial_contacts(response, STATE.passages)
     status, reason = decide(
         urgency=urgency,
         sentiment=sentiment,
@@ -40,6 +42,7 @@ def log_ticket(
         confidence=confidence,
         complaint=STATE.complaint,
         ungrounded=ungrounded,
+        unofficial=unofficial,
         injection=STATE.injection,
         agent_escalate=bool(escalate),
         agent_reason=escalation_reason,
