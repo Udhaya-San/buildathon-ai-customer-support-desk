@@ -361,6 +361,22 @@ def load_example():
         st.session_state["customer"] = example["customer"]
         st.session_state["order_id"] = example["order_id"]
 
+def require_access_code():
+    code = os.getenv("APP_ACCESS_CODE", "").strip()
+    if not code or st.session_state.get("unlocked"):
+        return
+    st.markdown(f"### 🎧 {config.COMPANY_NAME} Support Desk")
+    st.caption("This demo is private. Enter the access code to continue.")
+    entered = st.text_input("Access code", type="password", key="access_code_input")
+    if entered and entered == code:
+        st.session_state["unlocked"] = True
+        st.rerun()
+    if entered:
+        st.error("Wrong access code.")
+    st.stop()
+
+
+require_access_code()
 
 with st.sidebar:
     st.markdown(f"<div class='side-brand'>🎧 {config.COMPANY_NAME} <span>Support Desk</span></div>", unsafe_allow_html=True)
