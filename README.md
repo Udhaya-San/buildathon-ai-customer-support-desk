@@ -125,7 +125,7 @@ buildathon-ai-customer-support-desk/
 ├── vector_index.py         # FAISS index: finds passages closest in meaning
 ├── examples.py             # the 6 test complaints from the assignment
 ├── evaluate.py             # runs the 6 complaints with the real AI
-├── tests/                  # 51fast pytest tests (no API key needed)
+├── tests/                  # 51 fast pytest tests (no API key needed)
 ├── docs/                   # architecture diagram and test_cases.md
 ├── pytest.ini
 ├── knowledge_base/         # 10 short company documents (.md)
@@ -253,7 +253,7 @@ The reason is written to `escalation_reason` in the log and shown in the UI.
 | 3 | I forgot my password and can't log in. | Account, **Resolved**, reset steps |
 | 4 | The blender I received is broken. Can I get a replacement? | Product, **Resolved**, replacement process |
 | 5 | You charged my card three times! Fix this now or I'm contacting my bank and a lawyer. | Billing, High, Angry, **Escalated** (3 reasons) |
-| 6 | Do you sell gift cards for a company of 500 employees with custom branding? | **Escalated**: the reply was rated Low confidence, so a human follows up |
+| 6 | Do you sell gift cards for a company of 500 employees with custom branding? | **Escalated**: no matching document, low confidence and a bulk enquiry, so a human follows up |
 
 All six tickets got the expected status.
 
