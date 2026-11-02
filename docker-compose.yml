@@ -4,22 +4,7 @@ services:
     restart: unless-stopped
     env_file: .env
     ports:
-      - "127.0.0.1:8501:8501"
+      - "127.0.0.1:8502:8501"
     volumes:
       - ./logs:/app/logs
       - ./.cache:/app/.cache
-
-  caddy:
-    image: caddy:2
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-    depends_on:
-      - app
-
-volumes:
-  caddy_data:
