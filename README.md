@@ -70,6 +70,14 @@ AI output can slip, so everything that must be right is ordinary Python:
 
 ![Knowledge base](screenshots/07-knowledge-base-files.png)
 
+**My own test 1: personal data is masked**
+
+![Own test 1](screenshots/08-test-masking.png)
+
+**My own test 2: a hidden instruction is ignored and the ticket is escalated**
+
+![Own test 2](screenshots/09-test-injection.png)
+
 ## Project structure
 
 ```
