@@ -8,3 +8,4 @@ __pycache__/
 logs/tickets.csv
 .streamlit/secrets.toml
 .pytest_cache/
+.cache

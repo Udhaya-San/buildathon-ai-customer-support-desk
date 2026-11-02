@@ -90,7 +90,7 @@ def _load_chunks():
     return chunks
 
 
-def _search(query: str, top_k: int = 3):
+def _keyword_search(query: str, top_k: int = 3):
     chunks = _load_chunks()
     query_terms = list(dict.fromkeys(_terms(query)))
     strong = [t for t in query_terms if t not in _WEAK]
@@ -116,6 +116,44 @@ def _search(query: str, top_k: int = 3):
     best = scored[0][0]
     return [chunk for score, chunk in scored[:top_k] if score >= 0.5 * best]
 
+# ------------------------------------------------ search by meaning (embeddings + FAISS)
+_vector_cache = {"texts": None, "index": None}
+
+
+def _vector_search(query: str, chunks, top_k: int = 5):
+    """Passages closest in meaning to the query. Returns [] if embeddings are unavailable."""
+    try:
+        from vector_index import VectorIndex
+
+        texts = tuple(c["heading"] + ". " + c["text"] for c in chunks)
+        if _vector_cache["texts"] != texts:               # build once, rebuild only if documents change
+            _vector_cache["index"] = VectorIndex(list(texts))
+            _vector_cache["texts"] = texts
+        hits = _vector_cache["index"].search(query, top_k)
+    except Exception:                                      # no key, no internet ... keyword search still works
+        return []
+    hits = [(i, s) for i, s in hits if s >= config.VECTOR_MIN_SCORE]
+    if not hits:
+        return []
+    best = hits[0][1]
+    return [chunks[i] for i, s in hits if s >= best - 0.10]  # keep only passages close to the best one
+
+
+def _hybrid_search(query: str, top_k: int = 3):
+    """Keyword search + vector search, merged with Reciprocal Rank Fusion."""
+    chunks = _load_chunks()
+    keyword_hits = _keyword_search(query, top_k=5)
+    vector_hits = _vector_search(query, chunks)
+
+    scores, by_key = {}, {}
+    for ranking in (keyword_hits, vector_hits):
+        for rank, chunk in enumerate(ranking):
+            key = (chunk["file"], chunk["heading"])
+            by_key[key] = chunk
+            scores[key] = scores.get(key, 0.0) + 1.0 / (60 + rank)   # a high rank in either list scores more
+    best_first = sorted(scores, key=lambda k: scores[k], reverse=True)
+    return [by_key[key] for key in best_first[:top_k]]
+
 
 def search_kb(query: str) -> str:
     """Search the ShopNest company documents (shipping, refunds, accounts, products, billing).
@@ -124,7 +162,7 @@ def search_kb(query: str) -> str:
     Returns matching passages, each labelled with the source file name, or NO_MATCH.
     """
     STATE.searched = True
-    hits = _search(query)
+    hits = _hybrid_search(query)
     if not hits:
         STATE.kb_found = False
         STATE.kb_sources = []

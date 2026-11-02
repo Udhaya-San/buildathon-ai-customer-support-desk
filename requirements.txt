@@ -3,3 +3,5 @@ autogen-ext[openai]==0.7.5
 streamlit==1.66.1
 pandas>=2.0
 python-dotenv>=1.0
+faiss-cpu>=1.8
+numpy>=1.26

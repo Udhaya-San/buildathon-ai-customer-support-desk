@@ -189,6 +189,11 @@ async def run_live(complaint, customer, order_id, status_box):
             status_box.write(f"{icon} **{name}** finished.")
     return steps
 
+def signature(complaint, customer, order_id):
+    """A fingerprint of the form, ignoring case and extra spaces, to spot a repeated submit."""
+    clean = lambda t: " ".join((t or "").lower().split())
+    return (clean(complaint), clean(customer), clean(order_id))
+
 
 def process(complaint, customer, order_id):
     """Submit handler: run the agents, then keep the outcome in session_state."""
@@ -200,7 +205,8 @@ def process(complaint, customer, order_id):
             outcome["masked"] = list(STATE.masked_types)
             outcome["injection"] = STATE.injection
             if ticket_store.ticket_count() > before:
-                outcome["ticket_id"] = ticket_store.latest_ticket()["ticket_id"]
+                latest = ticket_store.latest_ticket()
+                outcome["ticket_id"] = latest["ticket_id"] if latest else None
                 status_box.update(label="Done. Ticket logged.", state="complete", expanded=False)
             else:
                 outcome["error"] = "The team stopped before the ticket was logged."
@@ -212,6 +218,8 @@ def process(complaint, customer, order_id):
             outcome["error"] = safe_error(exc)
             status_box.update(label="Something went wrong", state="error")
     st.session_state["outcome"] = outcome
+    if outcome["ticket_id"]:   # remember what was sent, so the same form cannot be sent twice
+        st.session_state["last_sig"] = signature(complaint, customer, order_id)
     st.rerun()
 
 
@@ -408,10 +416,16 @@ with st.container(key="card_form"):
 
 if submitted:
     text = st.session_state.get("complaint", "").strip()
+    name = st.session_state.get("customer", "")
+    order = st.session_state.get("order_id", "")
     if not text:
         st.warning("Please type a complaint first.")
+    elif len(text.split()) < 4:
+        st.warning("Please describe the problem in a little more detail (at least 4 words).")
+    elif signature(text, name, order) == st.session_state.get("last_sig"):
+        st.info("This complaint was already submitted. Edit it, or change the name or order ID, to submit again.")
     else:
-        process(text, st.session_state.get("customer", ""), st.session_state.get("order_id", ""))
+        process(text, name, order)
 
 if "outcome" in st.session_state:
     with st.container(key="card_result"):

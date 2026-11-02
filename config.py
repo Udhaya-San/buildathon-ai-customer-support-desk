@@ -12,6 +12,8 @@ COMPANY_NAME = "ShopNest"
 KB_DIR = BASE_DIR / "knowledge_base"
 LOG_DIR = BASE_DIR / "logs"
 LOG_PATH = LOG_DIR / "tickets.csv"
+# Passages with a meaning-similarity below this are ignored (0 to 1). Raise it for stricter matching.
+VECTOR_MIN_SCORE = 0.35
 
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
 
