@@ -125,7 +125,7 @@ buildathon-ai-customer-support-desk/
 ├── vector_index.py         # FAISS index: finds passages closest in meaning
 ├── examples.py             # the 6 test complaints from the assignment
 ├── evaluate.py             # runs the 6 complaints with the real AI
-├── tests/                  # 34 fast pytest tests (no API key needed)
+├── tests/                  # 51fast pytest tests (no API key needed)
 ├── docs/                   # architecture diagram and test_cases.md
 ├── pytest.ini
 ├── knowledge_base/         # 10 short company documents (.md)
@@ -177,8 +177,6 @@ python evaluate.py
 
 ## The knowledge base
 
-## The knowledge base
-
 Ten short documents for ShopNest in `knowledge_base/`:
 
 | Document | Covers |
@@ -197,8 +195,6 @@ Ten short documents for ShopNest in `knowledge_base/`:
 They contain real-looking details (delivery times, a 14 day return window, password reset steps)
 so every answer can be checked against the file.
 
-They contain real-looking details (delivery times, a 14 day return window, password reset steps)
-so every answer can be checked against the file.
 
 ## Hybrid search
 
@@ -261,7 +257,7 @@ The reason is written to `escalation_reason` in the log and shown in the UI.
 
 All six tickets got the expected status.
 
-Fast offline tests: run `pytest` (51tests, about 1 second, no API key needed).
+Fast offline tests: run `pytest` (51 tests, about 1 second, no API key needed).
 All test cases are listed in [docs/test_cases.md](docs/test_cases.md).
 
 ## What I learned
@@ -273,6 +269,6 @@ All test cases are listed in [docs/test_cases.md](docs/test_cases.md).
 ## Notes and limits
 
 - The company, policies and prices are invented for this assignment.
-- Search is keyword based. Embeddings with ChromaDB or FAISS would be the next upgrade.
+- Search is hybrid (keywords and embeddings). It is tuned for a small knowledge base of 10 documents.
 - The human review step is an approve button in the UI, not AutoGen's `UserProxyAgent`.
 - Keep your API key out of screenshots and posts. If a key was ever pushed to GitHub, revoke it and create a new one.

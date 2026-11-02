@@ -36,7 +36,7 @@ Run `pytest -v`. These need no AI, no internet and no API key, and run in about 
 |---|---|---|
 | `tests/test_guardrails.py` | 13 | Masking, injection detection, invented-number check |
 | `tests/test_escalation.py` | 13 | Every escalation rule, and rules that must NOT fire |
-| `tests/test_search.py` | 8 The knowledge-base search finds the right file, and finds nothing for unrelated questions |
+| `tests/test_search.py` | 8 | The knowledge-base search finds the right file, and finds nothing for unrelated questions |
 | `tests/test_new_rules.py` | 10 | Bulk, unofficial channel, high value, asks for a human, and cases that must NOT fire |
 | `tests/test_output_guardrail.py` | 7 | Unofficial emails, links and phone numbers in a reply |
-| **Total** | **51** |
+| **Total** | **51** | |
