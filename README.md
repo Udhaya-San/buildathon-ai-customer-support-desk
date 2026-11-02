@@ -1,5 +1,7 @@
 # AI Customer Support Desk (AutoGen + Streamlit)
 
+   **Live demo:** https://support.hamagama.sbs (access code on request)
+
 A multi-agent support desk for a made-up online store, **ShopNest**. A customer complaint goes through
 four AutoGen agents. They find the answer in the company's own documents, write a reply, log the ticket,
 and hand the difficult cases to a human.
@@ -104,7 +106,7 @@ AI output can slip, so everything that must be right is ordinary Python:
 | Duplicate-submit protection | ✅ | The same complaint cannot be submitted twice in a row |
 | Automated tests | ✅ | 51 `pytest` tests that need no API key |
 | Output guardrail and extra escalation rules | ✅ | Unofficial contact details in a reply, bulk enquiries, unofficial payment channels, high-value amounts, requests for a human |
-| Deployment | ⏳ | Planned: Docker on a VPS |
+| Deployment | ✅ | Docker on a VPS behind nginx + HTTPS: https://support.hamagama.sbs |
 
 ## Project structure
 
@@ -265,6 +267,18 @@ All test cases are listed in [docs/test_cases.md](docs/test_cases.md).
 - A plain-code rule is safer than asking the AI to "remember" a rule: even if the AI marks a ticket as not urgent, the escalation code still escalates a legal threat.
 - Testing with a fixed set of complaints and written expectations found a wrong test case quickly.
 - A second safety layer matters: for the gift card complaint the search found a loosely related passage, and the Resolution Agent's Low confidence still sent it to a human.
+
+## Run with Docker
+
+Create a `.env` file with your `OPENAI_API_KEY` and, optionally, `APP_ACCESS_CODE` (if set, the app asks for it before opening). Then:
+
+```bash
+docker compose up -d --build
+```
+
+The app listens on `127.0.0.1:8502`. Put a reverse proxy such as nginx in front of it for a public HTTPS address. Logs and the vector cache are kept in `./logs` and `./.cache`, so they survive restarts.
+
+The live demo runs this way on a VPS, behind nginx with a Let's Encrypt certificate.
 
 ## Notes and limits
 
