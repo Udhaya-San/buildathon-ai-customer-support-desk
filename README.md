@@ -48,21 +48,27 @@ AI output can slip, so everything that must be right is ordinary Python:
 
 ## Screenshots
 
+**Ticket raised**
+
+![Ticket raised](screenshots/01-ticket-raised.png)
+
 **Escalated ticket with the human review step**
 
-![Escalated ticket](screenshots/escalated.png)
+![Escalated ticket](screenshots/03-escalated.png)
 
-**Ticket Log and dashboard**
+**Ticket Log**
 
-![Ticket log](screenshots/ticket_log.png)
+![Ticket log](screenshots/04-ticket-log.png)
 
-**My own test 1: personal data is masked**
+**Dashboard**
 
-![Own test 1](screenshots/your_test_1.png)
+![Dashboard](screenshots/05-dashboard.png)
 
-**My own test 2: a hidden instruction is ignored and the ticket is escalated**
+![Graphs and logs](screenshots/06-graphs-and-logs.png)
 
-![Own test 2](screenshots/your_test_2.png)
+**Knowledge base files**
+
+![Knowledge base](screenshots/07-knowledge-base-files.png)
 
 ## Project structure
 
