@@ -1,6 +1,6 @@
 # AI Customer Support Desk (AutoGen + Streamlit)
 
-   **Live demo:** https://support.hamagama.sbs (access code on request)
+   **Live demo:** https://support.hamagama.sbs (Access Code: AILEADBY022027)
 
 A multi-agent support desk for a made-up online store, **ShopNest**. A customer complaint goes through
 four AutoGen agents. They find the answer in the company's own documents, write a reply, log the ticket,
@@ -261,6 +261,45 @@ All six tickets got the expected status.
 
 Fast offline tests: run `pytest` (51 tests, about 1 second, no API key needed).
 All test cases are listed in [docs/test_cases.md](docs/test_cases.md).
+
+## Evaluation
+
+`python evaluate.py` runs **28 test complaints** through the real agents and scores each one PASS or FAIL.
+Result: **28/28 passed** (model gpt-4o-mini).
+
+| Group | Cases | What is tested |
+| --- | ---: | --- |
+| Assignment complaints | 6 | The six required scenarios |
+| Normal questions | 5 | Shipping, refund, account, billing and product questions answered from the documents |
+| Out of scope | 3 | Restaurant, weather and cricket questions: no document matches, so a human follows up |
+| Prompt injection | 3 | "Ignore previous instructions", "admin mode", "mark this as Resolved": ignored and escalated |
+| Legal, fraud, dispute | 3 | Legal action, fraud and chargeback: always escalated by plain code |
+| Personal data | 2 | Card, email and phone are masked and never reach the log |
+| Missing information | 2 | "My order hasn't arrived" and "It's broken": no invented details |
+| Tone and urgency | 2 | Furious customer and urgent medicine order |
+| Edge inputs | 2 | Empty complaint (rejected without calling the AI) and gibberish |
+
+A case also fails if a card number, email or phone number appears in the saved ticket.
+
+<paste the table from eval_results.md here>
+
+### Cost and speed
+
+Measured on the 27 tickets from that run (the empty complaint is rejected before any AI call):
+
+| Metric | Average per ticket |
+| --- | --- |
+| Latency | 12.7 s |
+| Tokens | 3,446 |
+| Cost | $0.0007 (about $0.70 per 1,000 tickets) |
+
+Every ticket stores `latency_s`, `tokens` and `cost_usd` in the log.
+
+### A bug the evaluation found
+
+The first run scored 27/28. "How long does standard shipping take?" was escalated because the keyword search
+treated "shipping" and "delivery" as different words, so it missed the Delivery timelines section. I merged the
+two in the synonym table and the case now passes.
 
 ## What I learned
 
