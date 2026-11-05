@@ -102,9 +102,9 @@ AI output can slip, so everything that must be right is ordinary Python:
 | Embeddings and a vector store | ✅ | Hybrid search: keyword scoring plus OpenAI embeddings in a FAISS index, merged with rank fusion. If embeddings are unavailable, it falls back to keyword search |
 | `SelectorGroupChat` | ➖ | Not used. The fixed order Query, Knowledge, Resolution, Log is enforced with `RoundRobinGroupChat`, which is predictable and easy to audit |
 | Human-in-the-loop | ✅ | Escalated tickets show an editable reply and an Approve button. The approval is saved in the log. Built into the UI instead of `UserProxyAgent` |
-| Dashboard | ✅ | KPI cards, charts and the ticket log in `app.py` |
+| Dashboard | ✅ | KPI cards, charts and the ticket log in `app.py`, plus average latency, tokens and cost per ticket |
 | Duplicate-submit protection | ✅ | The same complaint cannot be submitted twice in a row |
-| Automated tests | ✅ | 51 `pytest` tests that need no API key |
+| Automated tests | ✅ | 51 `pytest` tests (no API key needed) plus a 28-case evaluation run against the real agents, 28/28 passed |
 | Output guardrail and extra escalation rules | ✅ | Unofficial contact details in a reply, bulk enquiries, unofficial payment channels, high-value amounts, requests for a human |
 | Deployment | ✅ | Docker on a VPS behind nginx + HTTPS: https://support.hamagama.sbs |
 
@@ -125,8 +125,9 @@ buildathon-ai-customer-support-desk/
 ├── state.py                # facts about the ticket that is running
 ├── embeddings.py           # turns text into vectors (OpenAI embeddings, cached)
 ├── vector_index.py         # FAISS index: finds passages closest in meaning
-├── examples.py             # the 6 test complaints from the assignment
-├── evaluate.py             # runs the 6 complaints with the real AI
+├── examples.py             # the 28 test complaints (6 from the assignment, 22 trick cases)
+├── evaluate.py             # runs all 28 with the real AI, scores PASS or FAIL
+├── eval_results.md         # latest evaluation results table
 ├── tests/                  # 51 fast pytest tests (no API key needed)
 ├── docs/                   # architecture diagram and test_cases.md
 ├── pytest.ini
@@ -172,7 +173,7 @@ streamlit run app.py
 The app opens at http://localhost:8501. Pick a sample complaint from the dropdown (or type your own)
 and press **Submit complaint**.
 
-Run all six assignment complaints in one go (adds six tickets to the log):
+Run all 28 test complaints in one go (adds 27 tickets to the log; the empty complaint is rejected before any AI call). It prints PASS or FAIL for each case and writes `eval_results.md`:
 ```bash
 python evaluate.py
 ```
@@ -244,9 +245,9 @@ The reason is written to `escalation_reason` in the log and shown in the UI.
 
 `logs/tickets.csv` (opens in Excel) has one row per ticket:
 
-`ticket_id, timestamp, customer_name, order_id, complaint, category, urgency, sentiment, summary, kb_sources, response, confidence, status, escalation_reason, human_review, human_reply`
+`ticket_id, timestamp, customer_name, order_id, complaint, category, urgency, sentiment, summary, kb_sources, response, confidence, status, escalation_reason, human_review, human_reply, latency_s, tokens, cost_usd`
 
-## Test results (`python evaluate.py`, model gpt-4o-mini)
+## Assignment test complaints (first 6 of the 28 cases) (`python evaluate.py`, model gpt-4o-mini)
 
 | # | Complaint | Result |
 |---|---|---|
