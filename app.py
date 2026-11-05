@@ -5,6 +5,7 @@ import html
 import json
 import os
 import re
+import time
 
 import altair as alt
 import pandas as pd
@@ -15,7 +16,7 @@ import config
 import ticket_store
 from examples import EXAMPLES
 from state import STATE
-from team import stream_ticket
+from team import stream_ticket, summarise_usage
 
 st.set_page_config(page_title=f"{config.COMPANY_NAME} AI Support Desk", page_icon="🎧", layout="wide")
 
@@ -170,9 +171,12 @@ def count_chart(counts, colors=None):
 
 
 async def run_live(complaint, customer, order_id, status_box):
-    """Run the team and collect each agent's output while showing progress."""
+    """Run the team, collect each agent's output while showing progress, and measure time and tokens."""
     steps = {name: {"text": "", "tool_calls": [], "tool_results": []} for name in AGENTS}
+    events = []
+    started = time.perf_counter()
     async for item in stream_ticket(complaint, customer, order_id):
+        events.append(item)
         source = getattr(item, "source", None)
         if source not in steps:
             continue
@@ -187,7 +191,9 @@ async def run_live(complaint, customer, order_id, status_box):
             steps[source]["text"] = item.content
             icon, name = AGENTS[source][1], AGENTS[source][2]
             status_box.write(f"{icon} **{name}** finished.")
-    return steps
+    seconds = round(time.perf_counter() - started, 1)
+    tokens, cost = summarise_usage(events)
+    return steps, (seconds, tokens, cost)
 
 def signature(complaint, customer, order_id):
     """A fingerprint of the form, ignoring case and extra spaces, to spot a repeated submit."""
@@ -201,12 +207,16 @@ def process(complaint, customer, order_id):
     outcome = {"error": None, "steps": {}, "ticket_id": None, "masked": [], "injection": False}
     with st.status("The support team is working on your complaint…", expanded=True) as status_box:
         try:
-            outcome["steps"] = asyncio.run(run_live(complaint, customer, order_id, status_box))
+            outcome["steps"], usage = asyncio.run(run_live(complaint, customer, order_id, status_box))
             outcome["masked"] = list(STATE.masked_types)
             outcome["injection"] = STATE.injection
             if ticket_store.ticket_count() > before:
                 latest = ticket_store.latest_ticket()
                 outcome["ticket_id"] = latest["ticket_id"] if latest else None
+                if latest:
+                    ticket_store.update_ticket(
+                        latest["ticket_id"], latency_s=usage[0], tokens=usage[1], cost_usd=usage[2]
+                    )
                 status_box.update(label="Done. Ticket logged.", state="complete", expanded=False)
             else:
                 outcome["error"] = "The team stopped before the ticket was logged."
@@ -323,6 +333,19 @@ def render_kpis(rows):
     kpi(c2, "Resolved by AI", str(resolved), f"{resolved * 100 // total}% of tickets" if total else "no tickets yet", "up")
     kpi(c3, "Escalated to a human", str(escalated), f"{pending} waiting for review" if escalated else "none", "down" if pending else "flat")
     kpi(c4, "Average urgency", f"{avg:.1f} / 3" if total else "-", "1 = low, 3 = high", "flat")
+    
+    timed = [r for r in rows if r.get("latency_s") and r.get("cost_usd")]
+    if timed:
+        n = len(timed)
+        avg_latency = sum(float(r["latency_s"]) for r in timed) / n
+        avg_cost = sum(float(r["cost_usd"]) for r in timed) / n
+        total_cost = sum(float(r["cost_usd"]) for r in timed)
+        avg_tokens = sum(int(r["tokens"]) for r in timed if r.get("tokens")) / n
+        c5, c6, c7, c8 = st.columns(4)
+        kpi(c5, "Average latency", f"{avg_latency:.1f} s", f"per ticket, {n} timed", "flat")
+        kpi(c6, "Average cost", f"${avg_cost:.4f}", "per ticket", "flat")
+        kpi(c7, "Total cost", f"${total_cost:.3f}", f"for {n} tickets", "flat")
+        kpi(c8, "Average tokens", f"{avg_tokens:,.0f}", "per ticket", "flat")
 
 
 def render_charts(df):
