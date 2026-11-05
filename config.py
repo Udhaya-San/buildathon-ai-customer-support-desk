@@ -47,3 +47,8 @@ def make_model_client():
     if base_url:
         kwargs["base_url"] = base_url
     return OpenAIChatCompletionClient(**kwargs)
+
+# Price of the model in US dollars per 1 million tokens (gpt-4o-mini). Check the current price
+# on OpenAI's pricing page and change these two numbers if it has moved.
+PRICE_INPUT_PER_M = 0.15
+PRICE_OUTPUT_PER_M = 0.60

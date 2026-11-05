@@ -22,8 +22,10 @@ COLUMNS = [
     "escalation_reason",
     "human_review",
     "human_reply",
+    "latency_s",
+    "tokens",
+    "cost_usd",
 ]
-
 
 def _read_rows():
     if not config.LOG_PATH.exists():
@@ -94,3 +96,4 @@ def update_ticket(ticket_id: str, **fields) -> bool:
 
 def now_text() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+

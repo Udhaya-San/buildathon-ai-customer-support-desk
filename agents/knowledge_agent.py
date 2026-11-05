@@ -18,6 +18,7 @@ _STOPWORDS = {
     "when", "where", "which", "who", "how", "why", "any", "some", "get", "got", "need", "want",
     "please", "help", "sell", "company", "ever", "just", "also", "very", "more", "most", "up",
     "out", "into", "over", "after", "before", "once", "per", "all", "one", "two", "three",
+    "take", "takes", "long",
 }
 # Words that appear in almost every document: they help a little but never count as a real match.
 _WEAK = {"order", "product", "item", "purchase", "buy", "bought", "customer", "shopnest", "support"}
@@ -29,7 +30,7 @@ _CANONICAL = {
     "arrive": "deliver", "arrives": "deliver", "arrived": "deliver", "arrival": "deliver",
     "delivery": "deliver", "delivered": "deliver", "deliver": "deliver", "dispatch": "deliver",
     "dispatched": "deliver", "reach": "deliver", "reached": "deliver",
-    "shipping": "ship", "shipment": "ship", "shipped": "ship", "ship": "ship", "courier": "ship",
+    "shipping": "deliver", "shipment": "deliver", "shipped": "deliver", "ship": "deliver", "courier": "deliver",
     "parcel": "parcel", "package": "parcel", "tracking": "track", "track": "track",
     # refunds and returns
     "refund": "refund", "refunds": "refund", "refunded": "refund", "reimburse": "refund",
